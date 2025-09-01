@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiHueInterface.Console", "MidiHueInterface.Console\MidiHueInterface.Console.csproj", "{A264D978-8F8C-4F36-9BAE-E0DA2EC1C642}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiHueInterface.Infra", "MidiHueInterface.Infra\MidiHueInterface.Infra.csproj", "{E0AE112E-3153-4768-9781-8BA57F6BEB3A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiHueInterface.App", "MidiHueInterface.App\MidiHueInterface.App.csproj", "{F3EA8F77-B05B-4E31-9070-5653EA9FDE17}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A264D978-8F8C-4F36-9BAE-E0DA2EC1C642}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A264D978-8F8C-4F36-9BAE-E0DA2EC1C642}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A264D978-8F8C-4F36-9BAE-E0DA2EC1C642}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A264D978-8F8C-4F36-9BAE-E0DA2EC1C642}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0AE112E-3153-4768-9781-8BA57F6BEB3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0AE112E-3153-4768-9781-8BA57F6BEB3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0AE112E-3153-4768-9781-8BA57F6BEB3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0AE112E-3153-4768-9781-8BA57F6BEB3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3EA8F77-B05B-4E31-9070-5653EA9FDE17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3EA8F77-B05B-4E31-9070-5653EA9FDE17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3EA8F77-B05B-4E31-9070-5653EA9FDE17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3EA8F77-B05B-4E31-9070-5653EA9FDE17}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
