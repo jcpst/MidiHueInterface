@@ -1,5 +1,4 @@
-﻿using System.Threading.RateLimiting;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MidiHueInterface.App;
@@ -8,10 +7,8 @@ using MidiHueInterface.App.Interfaces;
 using MidiHueInterface.App.Models;
 using MidiHueInterface.App.Services;
 using MidiHueInterface.Infra.Clients;
-using MidiHueInterface.Infra.Interfaces;
 using MidiHueInterface.Infra.Listeners;
 using MidiHueInterface.Infra.Repositories;
-using Polly;
 
 namespace MidiHueInterface;
 
@@ -38,22 +35,10 @@ public static class Program
 
     private static void ConfigureInfra(IServiceCollection services)
     {
-        services
-            .AddHttpClient<IHueBridgeClient, HueBridgeClient>((provider, client) =>
-            {
-                // TODO: discover device, set base address, generate auth token...
-            })
-            .AddResilienceHandler("HueBridgeRateLimiter", builder => builder.AddRateLimiter(
-                new SlidingWindowRateLimiter(new ()
-                {
-                    Window = TimeSpan.FromSeconds(1),
-                    SegmentsPerWindow = 1,
-                    PermitLimit = 10,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 20
-                })));
-        
+        services.AddSingleton<IHueBridgeClient, HueBridgeClient>();
         services.AddSingleton<MidiEventListener>();
+        services.AddTransient<IBridgeRepository, BridgeRepository>();
+        services.AddTransient<ISettingsRepository, SettingsRepository>();
         services.AddTransient<ILightBulbRepository, LightbulbRepository>();
     }
 
@@ -61,6 +46,7 @@ public static class Program
     {
         services.AddSingleton<IMediator, Mediator>();
         services.AddTransient<IMessageHandler<ProgramChangeMessage>, ProgramChangeHandler>();
+        services.AddTransient<ISettingsService, SettingsService>();
         services.AddTransient<IAutomationService, AutomationService>();
     }
 }

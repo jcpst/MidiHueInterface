@@ -3,7 +3,7 @@ using MidiHueInterface.App.Models;
 
 namespace MidiHueInterface.App.Handlers;
 
-public class ProgramChangeHandler : IMessageHandler<ProgramChangeMessage>
+public class ProgramChangeHandler(ILightBulbRepository lightBulbRepository) : IMessageHandler<ProgramChangeMessage>
 {
     public async Task HandleAsync(ProgramChangeMessage message, CancellationToken cancellationToken = default)
     {
@@ -14,7 +14,7 @@ public class ProgramChangeHandler : IMessageHandler<ProgramChangeMessage>
             _ => Task.FromResult(0),
         };
 
-        var t = await x;
+        await lightBulbRepository.GetLightsAsync(cancellationToken);
         
         Console.WriteLine("Message received via mediator.");
         Console.WriteLine($"CH {message.Channel} PC {message.ProgramNumber}");

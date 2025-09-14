@@ -11,11 +11,11 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="HueApi" Version="1.9.0" />
+      <PackageReference Include="HueApi.ColorConverters" Version="1.7.1" />
+      <PackageReference Include="HueApi.Entertainment" Version="1.7.0" />
       <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.2" />
       <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.8.0" />
-      <PackageReference Include="Q42.HueApi" Version="3.23.2" />
-      <PackageReference Include="Q42.HueApi.ColorConverters" Version="3.23.2" />
-      <PackageReference Include="Q42.HueApi.Entertainment" Version="3.23.2" />
     </ItemGroup>
 
 </Project>

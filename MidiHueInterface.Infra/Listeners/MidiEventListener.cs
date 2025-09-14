@@ -1,7 +1,8 @@
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
 using MidiHueInterface.App.Interfaces;
-using MidiHueInterface.App.Models;
+using PC = MidiHueInterface.App.Models.ProgramChangeMessage;
+using CC = MidiHueInterface.App.Models.ControlChangeMessage;
 
 namespace MidiHueInterface.Infra.Listeners;
 
@@ -13,33 +14,51 @@ public class MidiEventListener(IMediator mediator) : IDisposable
 
     public void EnableDevice(string name)
     {
+
+        if (this.registeredInputDevices.ContainsKey(name))
+        {
+            return;
+        }
+        
         var device = InputDevice.GetByName(name);
+
+        if (!device.IsListeningForEvents)
+        {
+            device.EventReceived += OnEventReceived;
+            device.StartEventsListening();
         
-        device.EventReceived += OnEventReceived;
-        device.StartEventsListening();
+            this.registeredInputDevices.Add(name, device);
+        }
+    }
+
+    public void DisableDevice(string name)
+    {
+        var device = InputDevice.GetByName(name);
+
+        if (device.IsListeningForEvents)
+        {
+            device.EventReceived -= OnEventReceived;
+            device.StopEventsListening();
         
-        
-        this.registeredInputDevices.Add(name, device);
+            this.registeredInputDevices.Remove(name);
+        }
     }
 
     private async void OnEventReceived(object? sender, MidiEventReceivedEventArgs e)
     {
+        var task = e.Event switch
+        {
+            ProgramChangeEvent pc => mediator.PublishAsync(new PC(pc.Channel, pc.ProgramNumber)),
+            ControlChangeEvent cc => mediator.PublishAsync(new CC(cc.Channel, cc.ControlNumber, cc.ControlValue)),
+            _ => Task.CompletedTask,
+        };
         try
         {
-            if (e.Event is ProgramChangeEvent pc)
-            {
-                var message = new ProgramChangeMessage(pc.Channel, pc.ProgramNumber);
-            
-                await mediator.PublishAsync(message);
-            }
-            else
-            {
-                Console.WriteLine(e.Event);
-            }
+            await task;
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine(ex.Message);
+            // Do nothing.
         }
     }
 
