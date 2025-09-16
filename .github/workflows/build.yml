@@ -79,7 +79,7 @@ jobs:
       shell: bash
       run: |
         if [ "${{ matrix.os }}" = "windows" ]; then
-          ls -la ./build-verify/MidiHueInterface.exe
+          ls -la ./build-verify/MidiHueInterface.Console.exe
         else
-          ls -la ./build-verify/MidiHueInterface
+          ls -la ./build-verify/MidiHueInterface.Console
         fi
