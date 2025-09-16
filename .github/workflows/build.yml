@@ -1,0 +1,85 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+      
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
+
+  build-verify:
+    name: Build Verification (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - os: windows
+            runner: windows-latest
+            runtime: win-x64
+          - os: macos
+            runner: macos-latest
+            runtime: osx-arm64
+          - os: linux
+            runner: ubuntu-latest
+            runtime: linux-x64
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build verification
+      run: |
+        dotnet publish MidiHueInterface.Console/MidiHueInterface.Console.csproj \
+          --configuration Release \
+          --runtime ${{ matrix.runtime }} \
+          --self-contained true \
+          --output ./build-verify \
+          /p:PublishSingleFile=true \
+          /p:PublishTrimmed=true \
+          /p:TrimMode=partial
+          
+    - name: Verify executable exists
+      shell: bash
+      run: |
+        if [ "${{ matrix.os }}" = "windows" ]; then
+          ls -la ./build-verify/MidiHueInterface.exe
+        else
+          ls -la ./build-verify/MidiHueInterface
+        fi
