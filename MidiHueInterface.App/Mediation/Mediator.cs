@@ -1,6 +1,6 @@
 using MidiHueInterface.App.Interfaces;
 
-namespace MidiHueInterface.App;
+namespace MidiHueInterface.App.Mediation;
 
 public class Mediator(IServiceProvider serviceProvider) : IMediator
 {

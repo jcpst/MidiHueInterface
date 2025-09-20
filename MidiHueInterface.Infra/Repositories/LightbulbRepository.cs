@@ -1,6 +1,7 @@
 using MidiHueInterface.App.Interfaces;
 using MidiHueInterface.Infra.Clients;
 
+
 namespace MidiHueInterface.Infra.Repositories;
 
 public class LightbulbRepository(IHueBridgeClient hueBridgeClient) : ILightBulbRepository
@@ -15,5 +16,10 @@ public class LightbulbRepository(IHueBridgeClient hueBridgeClient) : ILightBulbR
     public async Task TestAsync(CancellationToken cancellationToken = default)
     {
         await hueBridgeClient.BlinkAsync(cancellationToken);
+    }
+
+    public async Task AllLightsToColor(string colorHexCode, CancellationToken cancellationToken = default)
+    {
+        await hueBridgeClient.ChangeLightColorAsync(colorHexCode, cancellationToken);
     }
 }
