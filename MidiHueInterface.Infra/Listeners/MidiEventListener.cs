@@ -1,8 +1,8 @@
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
 using MidiHueInterface.App.Interfaces;
-using PC = MidiHueInterface.App.Models.ProgramChangeMessage;
-using CC = MidiHueInterface.App.Models.ControlChangeMessage;
+using PC = MidiHueInterface.App.Mediation.ProgramChangeMessage;
+using CC = MidiHueInterface.App.Mediation.ControlChangeMessage;
 
 namespace MidiHueInterface.Infra.Listeners;
 

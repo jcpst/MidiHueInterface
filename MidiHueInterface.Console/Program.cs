@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MidiHueInterface.App;
-using MidiHueInterface.App.Handlers;
 using MidiHueInterface.App.Interfaces;
-using MidiHueInterface.App.Models;
+using MidiHueInterface.App.Mediation;
 using MidiHueInterface.App.Services;
 using MidiHueInterface.Infra.Clients;
 using MidiHueInterface.Infra.Listeners;
@@ -45,6 +43,7 @@ public static class Program
     private static void ConfigureApp(IServiceCollection services)
     {
         services.AddSingleton<IMediator, Mediator>();
+        services.AddTransient<IMessageHandler<ControlChangeMessage>, ControlChangeHandler>();
         services.AddTransient<IMessageHandler<ProgramChangeMessage>, ProgramChangeHandler>();
         services.AddTransient<ISettingsService, SettingsService>();
         services.AddTransient<IAutomationService, AutomationService>();

@@ -1,8 +1,12 @@
+using System.Drawing;
 using HueApi;
 using HueApi.BridgeLocator;
+using HueApi.ColorConverters;
+using HueApi.ColorConverters.Original.Extensions;
 using HueApi.Models;
 using HueApi.Models.Requests;
 using Bridge = MidiHueInterface.App.Models.Bridge;
+using Color = HueApi.Models.Color;
 
 namespace MidiHueInterface.Infra.Clients;
 
@@ -61,24 +65,52 @@ public class HueBridgeClient : IHueBridgeClient
         
         return allLights;
     }
-
-    public async Task BlinkAsync(CancellationToken cancellationToken = default)
+    
+    public async Task ChangeLightColorAsync(string hexColor, CancellationToken cancellationToken = default)
     {
-        var on = new UpdateLight { On = new On { IsOn = true }, Dynamics = new Dynamics { Duration = 80 } };
-        var off = new UpdateLight { On = new On { IsOn = false }, Dynamics = new Dynamics { Duration = 80 } };
+        var color = new RGBColor(hexColor);
+        var update = new UpdateLight()
+            .TurnOn()
+            .SetDuration(TimeSpan.FromMilliseconds(70))
+            .SetColor(color);
         
         foreach (var (_, bridge) in this.bridges)
         {
             var lights = await bridge.GetLightsAsync();
-            
+
             foreach (var light in lights.Data)
             {
-                 await bridge.UpdateLightAsync(light.Id, on);
-                 await Task.Delay(300, cancellationToken);
-                 await bridge.UpdateLightAsync(light.Id, off);
-                 await Task.Delay(300, cancellationToken);
-                 await bridge.UpdateLightAsync(light.Id, on);
+                await bridge.UpdateLightAsync(light.Id, update);
             }
         }
+    }
+
+    public async Task BlinkAsync(CancellationToken cancellationToken = default)
+    {
+        var update = new UpdateLight().SetDuration(TimeSpan.FromMilliseconds(100));
+        var red = new RGBColor("#ff0000");
+        var green = new RGBColor("#00ff00");
+        
+        foreach (var (_, bridge) in this.bridges)
+        {
+            var lights = await bridge.GetLightsAsync();
+
+            foreach (var light in lights.Data)
+            {
+                var originalColor = light.ToRGBColor();
+                
+                await bridge.UpdateLightAsync(light.Id, update.TurnOn().SetColor(red));
+                await Wait();
+                await bridge.UpdateLightAsync(light.Id, update.TurnOff());
+                await Wait();
+                await bridge.UpdateLightAsync(light.Id, update.TurnOn().SetColor(green));
+                await Wait();
+                await bridge.UpdateLightAsync(light.Id, update.TurnOff());
+                await Wait();
+                await bridge.UpdateLightAsync(light.Id, update.TurnOn().SetColor(originalColor));
+            }
+        }
+        
+        Task Wait(int ms = 300) => Task.Delay(ms, cancellationToken);
     }
 }
