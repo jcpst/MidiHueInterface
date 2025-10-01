@@ -11,4 +11,6 @@ public interface ISettingsService
     Task SaveBridgeAsync(Bridge bridge, CancellationToken cancellationToken = default);
     
     public Task<Settings> GetSettingsAsync(CancellationToken cancellationToken = default);
+
+    PresetConfig? GetPreset(byte programNumber);
 }

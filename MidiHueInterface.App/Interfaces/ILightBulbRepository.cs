@@ -1,3 +1,5 @@
+using MidiHueInterface.App.Models;
+
 namespace MidiHueInterface.App.Interfaces;
 
 public interface ILightBulbRepository
@@ -6,5 +8,5 @@ public interface ILightBulbRepository
 
     Task TestAsync(CancellationToken cancellationToken = default);
 
-    Task AllLightsToColor(string colorHexCode, CancellationToken cancellationToken = default);
+    Task AllLightsToColor(string colorHexCode, EffectType effectType = EffectType.no_effect, CancellationToken cancellationToken = default);
 }

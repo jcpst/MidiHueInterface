@@ -4,15 +4,9 @@ namespace MidiHueInterface.Menu;
 
 public enum MainMenu
 {
-    [Display(Name = "Setup")]
-    Setup,
-    
     [Display(Name = "Settings")]   
     AppSettings,
-    
-    [Display(Name = "Devices")]
-    Devices,
-    
+
     [Display(Name = "Bridges")]
     Bridges,
     

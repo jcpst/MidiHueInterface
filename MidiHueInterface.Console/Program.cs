@@ -36,8 +36,10 @@ public static class Program
         services.AddSingleton<IHueBridgeClient, HueBridgeClient>();
         services.AddSingleton<MidiEventListener>();
         services.AddTransient<IBridgeRepository, BridgeRepository>();
-        services.AddTransient<ISettingsRepository, SettingsRepository>();
         services.AddTransient<ILightBulbRepository, LightbulbRepository>();
+        services.AddSingleton<IShowRepository, ShowRepository>();
+
+        services.AddTransient<ISettingsRepository, SettingsRepository>();
     }
 
     private static void ConfigureApp(IServiceCollection services)

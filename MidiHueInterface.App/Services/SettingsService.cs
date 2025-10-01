@@ -1,9 +1,13 @@
+using System.Text.Json;
 using MidiHueInterface.App.Interfaces;
 using MidiHueInterface.App.Models;
+using static System.Console;
 
 namespace MidiHueInterface.App.Services;
 
-public class SettingsService(ISettingsRepository settingsRepository) : ISettingsService
+public class SettingsService(
+    ISettingsRepository settingsRepository, 
+    IShowRepository showRepository) : ISettingsService
 {
     public async Task<Settings> GetSettingsAsync(CancellationToken cancellationToken = default)
     {
@@ -32,5 +36,10 @@ public class SettingsService(ISettingsRepository settingsRepository) : ISettings
             settings.Bridges = bridges.Append(bridge);
             await settingsRepository.SaveSettingsAsync(settings, cancellationToken);
         }
+    }
+
+    public PresetConfig? GetPreset(byte programNumber)
+    {
+        return showRepository.Presets.GetValueOrDefault(programNumber);
     }
 }

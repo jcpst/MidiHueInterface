@@ -1,4 +1,6 @@
+using HueApi.Models;
 using MidiHueInterface.App.Interfaces;
+using MidiHueInterface.App.Models;
 using MidiHueInterface.Infra.Clients;
 
 
@@ -18,8 +20,26 @@ public class LightbulbRepository(IHueBridgeClient hueBridgeClient) : ILightBulbR
         await hueBridgeClient.BlinkAsync(cancellationToken);
     }
 
-    public async Task AllLightsToColor(string colorHexCode, CancellationToken cancellationToken = default)
+    public async Task AllLightsToColor(string colorHexCode, EffectType effectType = EffectType.no_effect, CancellationToken cancellationToken = default)
     {
-        await hueBridgeClient.ChangeLightColorAsync(colorHexCode, cancellationToken);
+        var bridges = hueBridgeClient.GetRegisteredBridgeIds();
+
+        var effect = effectType switch
+        {
+            EffectType.prism => Effect.prism,
+            EffectType.opal => Effect.opal,
+            EffectType.sparkle => Effect.sparkle,
+            EffectType.fire => Effect.fire,
+            EffectType.candle => Effect.candle,
+            EffectType.underwater => Effect.underwater,
+            EffectType.cosmos => Effect.candle,
+            EffectType.sunbeam => Effect.sunbeam,
+            EffectType.enchant => Effect.enchant,
+             _ => Effect.no_effect
+        };
+
+        var bridgeTasks = bridges.Select(b => hueBridgeClient.ChangeLightsAsync(b, colorHexCode, effect, cancellationToken));
+        
+        await Task.WhenAll(bridgeTasks);
     }
 }
