@@ -14,7 +14,6 @@ namespace MidiHueInterface.Infra.Clients;
 public class HueBridgeClient : IHueBridgeClient
 {
     private readonly IDictionary<string, BridgeConfig> bridges = new Dictionary<string, BridgeConfig>();
-    private readonly IDictionary<string, string> bridgeLightIds = new Dictionary<string, string>();
     
     public async Task<IEnumerable<(string Id, string Uri)>> Discover(CancellationToken cancellationToken = default)
     {
@@ -33,11 +32,19 @@ public class HueBridgeClient : IHueBridgeClient
             {
                 var bridge = new LocalHueApi(ip, registration.Username);
                 var lights = await bridge.GetLightsAsync();
+                var zones = await bridge.GetZonesAsync();
+                var scenes = await bridge.GetScenesAsync();
                 
+                var validScenes = scenes.Data.Where(s => s.Metadata?.Name is not null);
+                var validZones = zones.Data.Where(z => z.Metadata?.Name is not null);
+                
+                _ = this.bridges.Remove(deviceName);
                 this.bridges.Add(deviceName, new BridgeConfig
                 {
                     Api = bridge,
-                    LightIds = lights.Data.Select(l => l.Id)
+                    LightIds = lights.Data.Select(l => l.Id),
+                    Scenes = validScenes.ToDictionary(z => z.Metadata!.Name, z => z.Id),
+                    Zones = validZones.ToDictionary(z => z.Metadata!.Name, z => z.Id),
                 });
             
                 return registration.Username!;
@@ -84,8 +91,10 @@ public class HueBridgeClient : IHueBridgeClient
     
     public async Task ChangeLightsAsync(
         string bridgeId, 
-        string hexColor, 
-        Effect effect = Effect.no_effect, 
+        string hexColor,
+        double brightness = 100,
+        double effectSpeed = 0,
+        Effect effect = Effect.no_effect,
         CancellationToken cancellationToken = default)
     {
         var color = new RGBColor(hexColor);
@@ -93,13 +102,18 @@ public class HueBridgeClient : IHueBridgeClient
         {
             Action = new EffectAction
             {
-                Effect = effect
+                Effect = effect,
+                Parameters = new EffectParams
+                {
+                    Speed = effectSpeed,
+                }
             }
         };
         
         var update = new UpdateLight { EffectsV2 = effects }
             .SetColor(color)
             .TurnOn()
+            .SetBrightness(brightness)
             .SetDuration(TimeSpan.FromMilliseconds(20));
         
         var bridge = this.bridges[bridgeId];

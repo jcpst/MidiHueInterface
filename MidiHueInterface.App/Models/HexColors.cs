@@ -35,8 +35,9 @@ public static class HexColors
 
     public static string Random() => All[new Random().Next(All.Length)];
 
-    public static string GetColorByReadableName(string colorName = OffWhite) => colorName switch
+    public static string GetColor(string colorName = OffWhite) => colorName switch
     {
+        _ when colorName.StartsWith('#') => colorName,
         nameof(Red) => Red,
         nameof(Green) => Green,
         nameof(Blue) => Blue,

@@ -20,26 +20,39 @@ public class LightbulbRepository(IHueBridgeClient hueBridgeClient) : ILightBulbR
         await hueBridgeClient.BlinkAsync(cancellationToken);
     }
 
-    public async Task AllLightsToColor(string colorHexCode, EffectType effectType = EffectType.no_effect, CancellationToken cancellationToken = default)
+    public async Task AllLightsToColor(
+        string colorHexCode,
+        double brightness = 100,
+        double effectSpeed = 0,
+        EffectType effectType = EffectType.NoEffect, 
+        CancellationToken cancellationToken = default)
     {
         var bridges = hueBridgeClient.GetRegisteredBridgeIds();
+        var effect = Map(effectType);
 
-        var effect = effectType switch
-        {
-            EffectType.prism => Effect.prism,
-            EffectType.opal => Effect.opal,
-            EffectType.sparkle => Effect.sparkle,
-            EffectType.fire => Effect.fire,
-            EffectType.candle => Effect.candle,
-            EffectType.underwater => Effect.underwater,
-            EffectType.cosmos => Effect.candle,
-            EffectType.sunbeam => Effect.sunbeam,
-            EffectType.enchant => Effect.enchant,
-             _ => Effect.no_effect
-        };
-
-        var bridgeTasks = bridges.Select(b => hueBridgeClient.ChangeLightsAsync(b, colorHexCode, effect, cancellationToken));
+        var bridgeTasks = bridges.Select(bridgeId => hueBridgeClient.ChangeLightsAsync(
+            bridgeId, 
+            colorHexCode, 
+            brightness, 
+            effectSpeed, 
+            effect, 
+            cancellationToken));
         
         await Task.WhenAll(bridgeTasks);
     }
+
+    private static Effect Map(EffectType effectType) => effectType switch
+    {
+        EffectType.Prism => Effect.prism,
+        EffectType.Opal => Effect.opal,
+        EffectType.Glisten => Effect.glisten,
+        EffectType.Sparkle => Effect.sparkle,
+        EffectType.Fire => Effect.fire,
+        EffectType.Candle => Effect.candle,
+        EffectType.Underwater => Effect.underwater,
+        EffectType.Cosmos => Effect.candle,
+        EffectType.Sunbeam => Effect.sunbeam,
+        EffectType.Enchant => Effect.enchant,
+        _ => Effect.no_effect
+    };
 }

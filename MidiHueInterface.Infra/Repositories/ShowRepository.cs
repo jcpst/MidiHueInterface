@@ -26,7 +26,6 @@ public class ShowRepository : IShowRepository
 
         this.watcher.Changed += (_, _) =>
         {
-            Console.WriteLine("Changed");
             Task.Delay(500).ContinueWith(_ =>
             {
                 lock (@lock)
@@ -45,29 +44,27 @@ public class ShowRepository : IShowRepository
     {
         try
         {
-            lock (@lock)
+            if (!File.Exists(filePath))
             {
-                if (!File.Exists(filePath))
-                {
-                    this.Presets = new ();
-                    return;
-                }
-
-                using var reader = new StreamReader(filePath);
-                using var csv = new CsvReader(reader, new CsvConfiguration(InvariantCulture)
-                {
-                    HasHeaderRecord = true
-                });
-                
-                this.Presets = csv.GetRecords<PresetConfig>().ToDictionary(p => p.ProgramNumber, p => p);
+                this.Presets = new ();
+                return;
             }
 
-            Console.WriteLine("Loaded");
-
+            using var reader = new StreamReader(filePath);
+            using var csv = new CsvReader(reader, new CsvConfiguration(InvariantCulture)
+            {
+                HasHeaderRecord = true
+            });
+            
+            this.Presets = csv.GetRecords<PresetConfig>().ToDictionary(p => p.ProgramNumber, p => p);
+            
+            Console.WriteLine("Presets loaded.");
         }
-        catch (Exception)
+        catch (Exception e)
         {
             // Do nothing.
+            Console.WriteLine("Error loading presets.");
+            Console.WriteLine(e.Message);
         }
     }
 }

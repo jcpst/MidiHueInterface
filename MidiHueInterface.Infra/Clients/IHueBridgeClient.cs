@@ -15,7 +15,13 @@ public interface IHueBridgeClient
     
     Task<IEnumerable<Light>> GetLightsAsync(CancellationToken cancellationToken = default);
 
-    Task ChangeLightsAsync(string bridgeId, string hexColor, Effect effect = Effect.no_effect, CancellationToken cancellationToken = default);
+    Task ChangeLightsAsync(
+        string bridgeId, 
+        string hexColor,
+        double brightness = 100,
+        double effectSpeed = 1,
+        Effect effect = Effect.no_effect,
+        CancellationToken cancellationToken = default);
 
     Task BlinkAsync(CancellationToken cancellationToken = default);
 
