@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using MidiHueInterface.App.Extensions;
 using MidiHueInterface.App.Interfaces;
 using MidiHueInterface.App.Models;
@@ -29,12 +28,8 @@ public class Host(IAutomationService automationService, ISettingsService setting
 
     private Task RunAsync(CancellationToken ct = default) => Selector<MainMenu>() switch
     {
-        Devices => Selector<DeviceMenu>() switch
-        {
-            DeviceMenu.ListAll => ListDevices(ct),
-            _ => Task.CompletedTask,
-        },
-        
+        AppSettings => SettingsAsync(ct),
+
         Bridges => Selector<BridgeMenu>() switch
         {
             BridgeMenu.List => ListBridges(ct),
@@ -50,19 +45,14 @@ public class Host(IAutomationService automationService, ISettingsService setting
             _ => Task.CompletedTask,
         },
         
-        AppSettings => SettingsAsync(ct),
         Test => TestApp(ct),
+        
         Exit => ExitApp(),
+        
         _ => Task.CompletedTask,
     };
-
-    private async Task ListDevices(CancellationToken ct = default)
-    {
-        foreach (var id in await automationService.GetLightBulbIdsAsync(ct))
-        {
-            WriteLine(id);
-        }
-    }
+    
+    private static T Selector<T>() where T : Enum => Select<T>(Regex.Replace(typeof(T).Name, "(?<!^)([A-Z])", " $1"));
     
     private async Task ListBridges(CancellationToken ct = default)
     {
@@ -75,7 +65,6 @@ public class Host(IAutomationService automationService, ISettingsService setting
     private async Task RegisterBridge(CancellationToken ct = default)
     {
         WriteLine("Please wait while we discover your bridges...");
-        WriteLine("Press the button on the bridge before selecting it.");
         
         var bridges = await automationService.GetBridgesAsync(ct);
         
@@ -150,6 +139,4 @@ public class Host(IAutomationService automationService, ISettingsService setting
         Environment.Exit(0);
         return Task.CompletedTask;
     }
-
-    private static T Selector<T>() where T : Enum => Select<T>(Regex.Replace(typeof(T).Name, "(?<!^)([A-Z])", " $1"));
 }

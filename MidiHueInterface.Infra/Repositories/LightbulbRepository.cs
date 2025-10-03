@@ -1,4 +1,6 @@
+using HueApi.Models;
 using MidiHueInterface.App.Interfaces;
+using MidiHueInterface.App.Models;
 using MidiHueInterface.Infra.Clients;
 
 
@@ -18,8 +20,39 @@ public class LightbulbRepository(IHueBridgeClient hueBridgeClient) : ILightBulbR
         await hueBridgeClient.BlinkAsync(cancellationToken);
     }
 
-    public async Task AllLightsToColor(string colorHexCode, CancellationToken cancellationToken = default)
+    public async Task AllLightsToColor(
+        string colorHexCode,
+        double brightness = 100,
+        double effectSpeed = 0,
+        EffectType effectType = EffectType.NoEffect, 
+        CancellationToken cancellationToken = default)
     {
-        await hueBridgeClient.ChangeLightColorAsync(colorHexCode, cancellationToken);
+        var bridges = hueBridgeClient.GetRegisteredBridgeIds();
+        var effect = Map(effectType);
+
+        var bridgeTasks = bridges.Select(bridgeId => hueBridgeClient.ChangeLightsAsync(
+            bridgeId, 
+            colorHexCode, 
+            brightness, 
+            effectSpeed, 
+            effect, 
+            cancellationToken));
+        
+        await Task.WhenAll(bridgeTasks);
     }
+
+    private static Effect Map(EffectType effectType) => effectType switch
+    {
+        EffectType.Prism => Effect.prism,
+        EffectType.Opal => Effect.opal,
+        EffectType.Glisten => Effect.glisten,
+        EffectType.Sparkle => Effect.sparkle,
+        EffectType.Fire => Effect.fire,
+        EffectType.Candle => Effect.candle,
+        EffectType.Underwater => Effect.underwater,
+        EffectType.Cosmos => Effect.candle,
+        EffectType.Sunbeam => Effect.sunbeam,
+        EffectType.Enchant => Effect.enchant,
+        _ => Effect.no_effect
+    };
 }

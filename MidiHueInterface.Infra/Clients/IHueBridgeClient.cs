@@ -10,10 +10,20 @@ public interface IHueBridgeClient
     Task<string?> RegisterAsync(string ip, string deviceName, string? userName = null, CancellationToken cancellationToken = default);
 
     Task EnableBridgeAsync(Bridge bridge, CancellationToken cancellationToken = default);
+
+    IEnumerable<string> GetRegisteredBridgeIds();
     
     Task<IEnumerable<Light>> GetLightsAsync(CancellationToken cancellationToken = default);
 
-    Task ChangeLightColorAsync(string hexColor, CancellationToken cancellationToken = default);
+    Task ChangeLightsAsync(
+        string bridgeId, 
+        string hexColor,
+        double brightness = 100,
+        double effectSpeed = 1,
+        Effect effect = Effect.no_effect,
+        CancellationToken cancellationToken = default);
 
     Task BlinkAsync(CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<Scene>> GetScenesAsync(string bridgeId, CancellationToken cancellationToken = default);
 }

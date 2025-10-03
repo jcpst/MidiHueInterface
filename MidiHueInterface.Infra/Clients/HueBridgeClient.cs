@@ -5,6 +5,7 @@ using HueApi.ColorConverters;
 using HueApi.ColorConverters.Original.Extensions;
 using HueApi.Models;
 using HueApi.Models.Requests;
+using MidiHueInterface.Infra.Models;
 using Bridge = MidiHueInterface.App.Models.Bridge;
 using Color = HueApi.Models.Color;
 
@@ -12,7 +13,7 @@ namespace MidiHueInterface.Infra.Clients;
 
 public class HueBridgeClient : IHueBridgeClient
 {
-    private readonly IDictionary<string, LocalHueApi> bridges = new Dictionary<string, LocalHueApi>();
+    private readonly IDictionary<string, BridgeConfig> bridges = new Dictionary<string, BridgeConfig>();
     
     public async Task<IEnumerable<(string Id, string Uri)>> Discover(CancellationToken cancellationToken = default)
     {
@@ -29,27 +30,49 @@ public class HueBridgeClient : IHueBridgeClient
 
             if (registration is not null)
             {
-                this.bridges.Add(deviceName, new LocalHueApi(ip, registration.Username)); 
+                var bridge = new LocalHueApi(ip, registration.Username);
+                var lights = await bridge.GetLightsAsync();
+                var zones = await bridge.GetZonesAsync();
+                var scenes = await bridge.GetScenesAsync();
+                
+                var validScenes = scenes.Data.Where(s => s.Metadata?.Name is not null);
+                var validZones = zones.Data.Where(z => z.Metadata?.Name is not null);
+                
+                _ = this.bridges.Remove(deviceName);
+                this.bridges.Add(deviceName, new BridgeConfig
+                {
+                    Api = bridge,
+                    LightIds = lights.Data.Select(l => l.Id),
+                    Scenes = validScenes.ToDictionary(z => z.Metadata!.Name, z => z.Id),
+                    Zones = validZones.ToDictionary(z => z.Metadata!.Name, z => z.Id),
+                });
             
                 return registration.Username!;
             }
-        }
-        else if (!this.bridges.ContainsKey(deviceName))
-        {
-            this.bridges.Add(deviceName, new LocalHueApi(ip, userName));
         }
         
         return null;
     }
 
-    public Task EnableBridgeAsync(Bridge bridge, CancellationToken cancellationToken = default)
+    public async Task EnableBridgeAsync(Bridge bridge, CancellationToken cancellationToken = default)
     {
         if (!bridges.ContainsKey(bridge.Id))
         {
-            this.bridges.Add(bridge.Id, new LocalHueApi(bridge.Uri, bridge.Username));
+            var b = new LocalHueApi(bridge.Uri, bridge.Username);
+            
+            var lights = await b.GetLightsAsync();
+            
+            this.bridges.Add(bridge.Id, new BridgeConfig
+            {
+                Api = b,
+                LightIds = lights.Data.Select(l => l.Id)
+            });
         }
-        
-        return Task.CompletedTask;
+    }
+
+    public IEnumerable<string> GetRegisteredBridgeIds()
+    {
+        return this.bridges.AsEnumerable().Select(b => b.Key);
     }
     
     public async Task<IEnumerable<Light>> GetLightsAsync(CancellationToken cancellationToken = default)
@@ -58,7 +81,7 @@ public class HueBridgeClient : IHueBridgeClient
         
         foreach (var bridge in this.bridges)
         {
-            var lights = await bridge.Value.GetLightsAsync();
+            var lights = await bridge.Value.Api.GetLightsAsync();
             
             allLights.AddRange(lights.Data);
         }
@@ -66,51 +89,80 @@ public class HueBridgeClient : IHueBridgeClient
         return allLights;
     }
     
-    public async Task ChangeLightColorAsync(string hexColor, CancellationToken cancellationToken = default)
+    public async Task ChangeLightsAsync(
+        string bridgeId, 
+        string hexColor,
+        double brightness = 100,
+        double effectSpeed = 0,
+        Effect effect = Effect.no_effect,
+        CancellationToken cancellationToken = default)
     {
         var color = new RGBColor(hexColor);
-        var update = new UpdateLight()
-            .TurnOn()
-            .SetDuration(TimeSpan.FromMilliseconds(70))
-            .SetColor(color);
-        
-        foreach (var (_, bridge) in this.bridges)
+        var effects = new EffectsV2
         {
-            var lights = await bridge.GetLightsAsync();
-
-            foreach (var light in lights.Data)
+            Action = new EffectAction
             {
-                await bridge.UpdateLightAsync(light.Id, update);
+                Effect = effect,
+                Parameters = new EffectParams
+                {
+                    Speed = effectSpeed,
+                }
             }
-        }
+        };
+        
+        var update = new UpdateLight { EffectsV2 = effects }
+            .SetColor(color)
+            .TurnOn()
+            .SetBrightness(brightness)
+            .SetDuration(TimeSpan.FromMilliseconds(20));
+        
+        var bridge = this.bridges[bridgeId];
+        var lights = bridge.LightIds;
+        var lightTasks = lights.Select(l => bridge.Api.UpdateLightAsync(l, update));
+        
+        await Task.WhenAll(lightTasks);
     }
 
     public async Task BlinkAsync(CancellationToken cancellationToken = default)
     {
-        var update = new UpdateLight().SetDuration(TimeSpan.FromMilliseconds(100));
+        var update = new UpdateLight().SetDuration(TimeSpan.FromMilliseconds(50));
         var red = new RGBColor("#ff0000");
         var green = new RGBColor("#00ff00");
         
         foreach (var (_, bridge) in this.bridges)
         {
-            var lights = await bridge.GetLightsAsync();
+            var lights = await bridge.Api.GetLightsAsync();
 
             foreach (var light in lights.Data)
             {
                 var originalColor = light.ToRGBColor();
                 
-                await bridge.UpdateLightAsync(light.Id, update.TurnOn().SetColor(red));
+                await bridge.Api.UpdateLightAsync(light.Id, update.TurnOn().SetColor(red));
                 await Wait();
-                await bridge.UpdateLightAsync(light.Id, update.TurnOff());
+                await bridge.Api.UpdateLightAsync(light.Id, update.TurnOff());
                 await Wait();
-                await bridge.UpdateLightAsync(light.Id, update.TurnOn().SetColor(green));
+                await bridge.Api.UpdateLightAsync(light.Id, update.TurnOn().SetColor(green));
                 await Wait();
-                await bridge.UpdateLightAsync(light.Id, update.TurnOff());
+                await bridge.Api.UpdateLightAsync(light.Id, update.TurnOff());
                 await Wait();
-                await bridge.UpdateLightAsync(light.Id, update.TurnOn().SetColor(originalColor));
+                await bridge.Api.UpdateLightAsync(light.Id, update.TurnOn().SetColor(originalColor));
             }
         }
         
         Task Wait(int ms = 300) => Task.Delay(ms, cancellationToken);
+    }
+    
+    public async Task<IEnumerable<Scene>> GetScenesAsync(string bridgeId, CancellationToken cancellationToken = default)
+    {
+        List<Scene> scenes = [];
+
+        if (bridges.TryGetValue(bridgeId, out var bridge))
+        {
+            var scenesResponse = await bridge.Api.GetScenesAsync();
+            
+            scenes.AddRange(scenesResponse.Data);
+        }
+        
+        return scenes;
     }
 }
